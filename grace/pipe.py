@@ -1,4 +1,4 @@
-from twisted.internet import protocol, endpoints
+from twisted.internet import protocol, endpoints, defer
 from twisted.protocols.portforward import ProxyServer
 
 
@@ -33,6 +33,21 @@ class Pipe(protocol.Factory):
         XXX
         """
         self.dst = dst
+        self.alive = {
+            dst: defer.Deferred(),
+        }
+
+
+    def switch(self, dst):
+        """
+        Switch the place that this forwarder forwards to.
+        
+        @param dst: The client endpoint needed to connect to the receiving
+            server.
+        """
+        old_dst = self.dst
+        self.dst = dst
+        return self.alive[old_dst]
 
 
 
