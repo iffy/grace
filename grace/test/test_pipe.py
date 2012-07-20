@@ -46,11 +46,7 @@ class PipeTest(TestCase):
         client_received = yield client.satisfied
 
 
-    def test_forwards_TCP(self):
-        """
-        Forwarding should work (the data should get to the remote
-        and vice versa).
-        """
+    def test_TCP_to_TCP(self):
         return self.t_endpoints(
             'tcp:host=127.0.0.1:port=10333',
             'tcp:10333',
@@ -59,10 +55,7 @@ class PipeTest(TestCase):
         )
 
 
-    def test_forwards_UNIX(self):
-        """
-        Forwarding to a UNIX server should work
-        """
+    def test_TCP_to_UNIX(self):
         socket = self.mktemp()
         return self.t_endpoints(
             'tcp:host=127.0.0.1:port=10333',
@@ -70,4 +63,26 @@ class PipeTest(TestCase):
             'unix:path=%s' % socket,
             'unix:%s' % socket,
         )
+
+
+    def test_UNIX_to_TCP(self):
+        socket = self.mktemp()
+        return self.t_endpoints(
+            'unix:path=%s' % socket,
+            'unix:%s' % socket,
+            'tcp:host=127.0.0.1:port=10333',
+            'tcp:10333',
+        )
+
+
+    def test_UNIX_to_UNIX(self):
+        socket1 = self.mktemp()
+        socket2 = self.mktemp()
+        return self.t_endpoints(
+            'unix:path=%s' % socket1,
+            'unix:%s' % socket1,
+            'unix:path=%s' % socket2,
+            'unix:%s' % socket2,
+        )
+
 
