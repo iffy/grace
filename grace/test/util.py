@@ -12,6 +12,9 @@ class YippyYuckProtocol(protocol.Protocol):
     I am useful for testing because I accept connections and only
     finish the connections when commanded.
     """
+    
+    def __init__(self):
+        self.satisfied = defer.Deferred()
 
 
     def connectionMade(self):
@@ -23,6 +26,11 @@ class YippyYuckProtocol(protocol.Protocol):
     def dataReceived(self, data):
         log.msg('%r.dataReceived(%r)' % (self, data))
         self.data += data
+        if self.data == self.expected_data:
+            self.satisfied.callback(self)
+        elif len(self.data) >= len(self.expected_data):
+            self.satisfied.errback(Exception('Got unexpected data: %r\n%r' % (
+                                     self.data, self.expected_data)))
 
 
     def connectionLost(self, reason):
@@ -36,9 +44,10 @@ class YippyYuckFactory(protocol.Factory):
     protocol = YippyYuckProtocol
 
     
-    def __init__(self):
+    def __init__(self, expected_data):
         self.protocols = []
         self.deferreds = defaultdict(lambda:defer.Deferred())
+        self.expected_data = expected_data
 
 
     def buildProtocol(self, addr):
@@ -57,6 +66,10 @@ class YippyYuckFactory(protocol.Factory):
 
     def connectionMade(self, proto):
         idx = self.protocols.index(proto)
+        try:
+            proto.expected_data = self.expected_data[idx]
+        except IndexError as e:
+            raise Exception("An unexpected protocol connected: %s" % idx)
         self.deferreds[idx].callback(proto)
 
 
@@ -73,7 +86,12 @@ class ClientFactory(protocol.ClientFactory):
     connected = defer.Deferred()
 
 
+    def __init__(self, expected_data):
+        self.expected_data = expected_data
+
+
     def connectionMade(self, proto):
         self.proto = proto
+        proto.expected_data = self.expected_data
         self.connected.callback(proto)
 

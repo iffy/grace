@@ -1,5 +1,6 @@
 from twisted.trial.unittest import TestCase
 from twisted.internet import reactor, defer, task, endpoints
+from twisted.python import log
 
 
 from grace.test.util import YippyYuckFactory, ClientFactory
@@ -19,7 +20,7 @@ class PipeTest(TestCase):
         and vice versa).
         """
         # set up service we're forwarding to.
-        testf = YippyYuckFactory()
+        testf = YippyYuckFactory(expected_data=['hey'])
         ep = endpoints.serverFromString(reactor, 'tcp:10333')
         test_port = yield ep.listen(testf)
         self.addCleanup(test_port.stopListening)
@@ -31,7 +32,7 @@ class PipeTest(TestCase):
         self.addCleanup(pipe_port.stopListening)
         
         # start a client to test
-        clientf = ClientFactory()
+        clientf = ClientFactory(expected_data='hey back')
         client_ep = endpoints.clientFromString(reactor, 
                 'tcp:host=127.0.0.1:port=10111')
         client = yield client_ep.connect(clientf)
@@ -39,13 +40,10 @@ class PipeTest(TestCase):
 
         # send some data forward and back
         client.transport.write('hey')
-        testf.protocols[0].transport.write('hey back')
+        server_proto = yield testf.connected(0)
+        server_received = yield server_proto.satisfied
         
-        def check():
-            self.assertEqual(testf.protocols[0].data, 'hey')
-            self.assertEqual(client.data, 'hey back')
-        
-        # XXX how can this be better?
-        yield task.deferLater(reactor, 1, check)
+        server_proto.transport.write('hey back')
+        client_received = yield client.satisfied
 
 
