@@ -83,10 +83,10 @@ class ClientFactory(protocol.ClientFactory):
     
     protocol = YippyYuckProtocol
     proto = None
-    connected = defer.Deferred()
 
 
     def __init__(self, expected_data):
+        self.connected = defer.Deferred()
         self.expected_data = expected_data
 
 
