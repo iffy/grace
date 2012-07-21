@@ -40,11 +40,9 @@ class Pipe(protocol.Factory):
         """
         XXX
         """
-        self.dst = dst
-        self.alive = {
-            dst: defer.Deferred(),
-        }
-        self.connections = {dst:0}
+        self.alive = {}
+        self.connections = {}
+        self._setDst(dst)
 
 
     def addConnection(self, dst, conn):
@@ -59,6 +57,12 @@ class Pipe(protocol.Factory):
             self.alive[dst].callback(dst)
 
 
+    def _setDst(self, dst):
+        self.dst = dst
+        self.connections[dst] = 0
+        self.alive[dst] = defer.Deferred()
+        
+
     def switch(self, dst):
         """
         Switch the place that this forwarder forwards to.
@@ -67,9 +71,7 @@ class Pipe(protocol.Factory):
             server.
         """
         old_dst = self.dst
-        self.dst = dst
-        self.connections[dst] = 0
-        self.alive[dst] = defer.Deferred()
+        self._setDst(dst)
         return self.alive[old_dst]
 
 
