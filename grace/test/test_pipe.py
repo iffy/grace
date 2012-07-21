@@ -169,7 +169,7 @@ class PipeTest(TestCase):
         self.assertFalse(r2.called, "There is still a connection, so the "
                  "forwarding is still alive")
         yield client1.transport.loseConnection()
-        dead_notice = yield r2.called
+        dead_notice = yield r2
         self.assertEqual(dead_notice, 'unix:path=' + socket1, "The Deferred "
                          "should have fired back with the endpoint that just "
                          "disconnected.")

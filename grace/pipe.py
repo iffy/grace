@@ -1,22 +1,30 @@
 from twisted.internet import protocol, endpoints, defer
-from twisted.protocols.portforward import ProxyServer
+from twisted.python import log
+from twisted.protocols import portforward
 
 
 
-class ProxyServer(ProxyServer):
+class ProxyServer(portforward.ProxyServer):
 
 
     def connectionMade(self):
         # Don't read anything from the connecting client until we have
         # somewhere to send it to.
+        self._dst = dst = self.factory.dst
+        self.factory.addConnection(dst, self)
         self.transport.pauseProducing()
 
         client = self.clientProtocolFactory()
         client.setServer(self)
 
         from twisted.internet import reactor
-        endpoint = endpoints.clientFromString(reactor, self.factory.dst)
+        endpoint = endpoints.clientFromString(reactor, dst)
         endpoint.connect(client)
+
+
+    def connectionLost(self, reason):
+        self.factory.removeConnection(self._dst, self)
+        return portforward.ProxyServer.connectionLost(self, reason)
 
 
 
@@ -36,6 +44,19 @@ class Pipe(protocol.Factory):
         self.alive = {
             dst: defer.Deferred(),
         }
+        self.connections = {dst:0}
+
+
+    def addConnection(self, dst, conn):
+        log.msg('addConnection(%r, %r)' % (dst, conn))
+        self.connections[dst] += 1
+
+
+    def removeConnection(self, dst, conn):
+        log.msg('removeConnection(%r, %r)' % (dst, conn))
+        self.connections[dst] -= 1
+        if self.connections[dst] == 0:
+            self.alive[dst].callback(dst)
 
 
     def switch(self, dst):
@@ -47,6 +68,8 @@ class Pipe(protocol.Factory):
         """
         old_dst = self.dst
         self.dst = dst
+        self.connections[dst] = 0
+        self.alive[dst] = defer.Deferred()
         return self.alive[old_dst]
 
 
