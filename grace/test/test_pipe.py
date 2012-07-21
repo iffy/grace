@@ -15,16 +15,52 @@ class PipeTest(TestCase):
 
 
     @defer.inlineCallbacks
+    def startServer(self, endpoint, expected_data):
+        """
+        Create a server that will expect some data.  The server will be torn
+        down after the test.
+        
+        @param endpoint: The endpoint to listen on
+        
+        @param expected_data: A list of expected_data, 1 string for each
+            Protocol you expected to be created.
+        
+        @return: a L{YippyYuckFactory} instance.
+        """
+        server = YippyYuckFactory(expected_data)
+        ep = endpoints.serverFromString(reactor, endpoint)
+        port = yield ep.listen(server)
+        self.addCleanup(port.stopListening)
+        defer.returnValue(server)
+
+
+    @defer.inlineCallbacks
+    def connectClient(self, endpoint, expected_data):
+        """
+        Create a client.
+        
+        @param endpoint: Endpoint to connect to
+        
+        @param expected_data: A single string of data this client expects to
+            get back from the server.
+            
+        @return: a L{YippyYuckProtocol} instance.
+        """
+        clientf = ClientFactory(expected_data)
+        client_ep = endpoints.clientFromString(reactor, endpoint)
+        client = yield client_ep.connect(clientf)
+        self.addCleanup(client.transport.loseConnection)
+        defer.returnValue(client)
+
+
+    @defer.inlineCallbacks
     def t_endpoints(self, client, pfserver, pfclient, server):
         """
         Test that forwarding works from C{client} to C{pfserver}
         using C{pfclient} to C{server}
         """
         # set up service we're forwarding to.
-        testf = YippyYuckFactory(expected_data=['hey'])
-        ep = endpoints.serverFromString(reactor, server)
-        test_port = yield ep.listen(testf)
-        self.addCleanup(test_port.stopListening)
+        server = yield self.startServer(server, ['hey'])
         
         # start Pipe
         pipe = Pipe(pfclient)
@@ -33,14 +69,11 @@ class PipeTest(TestCase):
         self.addCleanup(pipe_port.stopListening)
         
         # start a client to test
-        clientf = ClientFactory(expected_data='hey back')
-        client_ep = endpoints.clientFromString(reactor, client)
-        client = yield client_ep.connect(clientf)
-        self.addCleanup(client.transport.loseConnection)
+        client = yield self.connectClient(client, 'hey back')
 
         # send some data forward and back
         client.transport.write('hey')
-        server_proto = yield testf.connected(0)
+        server_proto = yield server.connected(0)
         server_received = yield server_proto.satisfied
         
         server_proto.transport.write('hey back')
@@ -85,45 +118,6 @@ class PipeTest(TestCase):
             'unix:path=%s' % socket2,
             'unix:%s' % socket2,
         )
-
-
-    @defer.inlineCallbacks
-    def startServer(self, endpoint, expected_data):
-        """
-        Create a server that will expect some data.  The server will be torn
-        down after the test.
-        
-        @param endpoint: The endpoint to listen on
-        
-        @param expected_data: A list of expected_data, 1 string for each
-            Protocol you expected to be created.
-        
-        @return: a L{YippyYuckFactory} instance.
-        """
-        server = YippyYuckFactory(expected_data)
-        ep = endpoints.serverFromString(reactor, endpoint)
-        port = yield ep.listen(server)
-        self.addCleanup(port.stopListening)
-        defer.returnValue(server)
-
-
-    @defer.inlineCallbacks
-    def connectClient(self, endpoint, expected_data):
-        """
-        Create a client.
-        
-        @param endpoint: Endpoint to connect to
-        
-        @param expected_data: A single string of data this client expects to
-            get back from the server.
-            
-        @return: a L{YippyYuckProtocol} instance.
-        """
-        clientf = ClientFactory(expected_data)
-        client_ep = endpoints.clientFromString(reactor, endpoint)
-        client = yield client_ep.connect(clientf)
-        self.addCleanup(client.transport.loseConnection)
-        defer.returnValue(client)
 
 
     @defer.inlineCallbacks
