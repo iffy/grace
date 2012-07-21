@@ -175,3 +175,20 @@ class PipeTest(TestCase):
                          "disconnected.")
 
 
+    def test_noswitch_nocallback(self):
+        """
+        If the Pipe is still forwarding to an endpoint, the
+        alive Deferred should not fire even when the last 
+        connection is done.
+        """
+        p = Pipe('foo')
+        proto1 = object()
+        p.addConnection('foo', proto1)
+        p.removeConnection('foo', proto1)
+        d = p.alive['foo']
+        self.assertEqual(d.called, False, "Should not have called "
+                         "the Deferred because it's still "
+                         "forwarding to that endpoint")
+        
+
+

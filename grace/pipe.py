@@ -59,7 +59,7 @@ class Pipe(protocol.Factory):
 
     def removeConnection(self, dst, conn):
         self._connections[dst] -= 1
-        if self._connections[dst] == 0:
+        if self._connections[dst] == 0 and dst != self.dst:
             self.alive[dst].callback(dst)
 
 
