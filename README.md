@@ -9,7 +9,18 @@ Install the dependencies:
 
     pip install Twisted
 
-Then clone this or XXX download a file and:
+Either clone repo:
+
+    git clone https://github.com/iffy/grace.git grace.git
+    cd grace.git
+
+Or download a tar:
+
+    wget https://github.com/iffy/grace/tarball/master
+    tar xf master
+    cd iffy-grace-*
+
+Then install:
 
     python setup.py install
 
@@ -25,9 +36,13 @@ Start forwarding TCP traffic from port 9000 to port 7500 on the local machine:
 
     grace start tcp:9000 tcp:host=127.0.0.1:port=7500
 
-Switch traffic from port 7500 to port 7600:
+Switch traffic from port 7500 to port 7600 (without disconnecting anyone still connected to port 7500):
 
     grace switch tcp:host=127.0.0.1:port=7600
+
+List forwarding rules:
+
+    grace ls
 
 Switch traffic from port 7600 to port 7700 and wait for all connections to previous ports (7500 and 7600) to finish:
 
