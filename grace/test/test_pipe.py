@@ -189,6 +189,46 @@ class PipeTest(TestCase):
         self.assertEqual(d.called, False, "Should not have called "
                          "the Deferred because it's still "
                          "forwarding to that endpoint")
+
+
+    def test_ls(self):
+        """
+        You should be able to list the endpoints currently 
+        forwarding
+        """
+        p = Pipe('foo')
+        r = set(p.ls())
+        self.assertEqual(r, set([
+            # endpoint, connections, active/not
+            ('foo', 0, True),
+        ]))
         
+        proto1 = object()
+        p.addConnection('foo', proto1)
+        self.assertEqual(set(p.ls()), set([
+            ('foo', 1, True),
+        ]))
+        
+        p.switch('bar')
+        proto2 = object()
+        p.addConnection('bar', proto2)
+        self.assertEqual(set(p.ls()), set([
+            ('foo', 1, False),
+            ('bar', 1, True),
+        ]))
+        
+        p.removeConnection('bar', proto2)
+        self.assertEqual(set(p.ls()), set([
+            ('foo', 1, False),
+            ('bar', 0, True),
+        ]))
+        
+        p.removeConnection('foo', proto1)
+        self.assertEqual(set(p.ls()), set([
+            ('bar', 0, True),
+        ]))
+        self.assertEqual(p.alive.keys(), ['bar'], "Only active or"
+                         " still working endpoints should be "
+                         "listed")
 
 

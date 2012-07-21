@@ -61,6 +61,8 @@ class Pipe(protocol.Factory):
         self._connections[dst] -= 1
         if self._connections[dst] == 0 and dst != self.dst:
             self.alive[dst].callback(dst)
+            del self._connections[dst]
+            del self.alive[dst]
 
 
     def _setDst(self, dst):
@@ -85,5 +87,17 @@ class Pipe(protocol.Factory):
         self._setDst(dst)
         return self.alive[old_dst]
 
+
+    def ls(self):
+        """
+        List the endpoints that are either currently active or
+        have connections pending.
+        
+        @rtype: generator
+        @return: A list of 3-tuples of the form:
+            (ENDPOINT, NUMBER OF CONNECTIONS, ACTIVE?)
+        """
+        for endpoint, conns in self._connections.items():
+            yield (endpoint, conns, endpoint == self.dst)
 
 
