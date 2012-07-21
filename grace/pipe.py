@@ -30,7 +30,13 @@ class ProxyServer(portforward.ProxyServer):
 
 class Pipe(protocol.Factory):
     """
-    XXX
+    I forward connections from wherever I'm listening to a
+    particular endpoint.  The endpoint I forward to can be changed
+    at runtime with L{switch}.
+    
+    @ivar alive: A dictionary whose keys are endpoints to which I
+        have at least one connection going and whose values are
+        C{Deferred}s that fire when the connections have finished.
     """
     
     protocol = ProxyServer
@@ -38,28 +44,28 @@ class Pipe(protocol.Factory):
     
     def __init__(self, dst):
         """
-        XXX
+        @param dst: The endpoint a client would use to connect to
+            the server I will forward to.  For instance:
+            C{tcp:host=127.0.0.1:port=2930}.
         """
         self.alive = {}
-        self.connections = {}
+        self._connections = {}
         self._setDst(dst)
 
 
     def addConnection(self, dst, conn):
-        log.msg('addConnection(%r, %r)' % (dst, conn))
-        self.connections[dst] += 1
+        self._connections[dst] += 1
 
 
     def removeConnection(self, dst, conn):
-        log.msg('removeConnection(%r, %r)' % (dst, conn))
-        self.connections[dst] -= 1
-        if self.connections[dst] == 0:
+        self._connections[dst] -= 1
+        if self._connections[dst] == 0:
             self.alive[dst].callback(dst)
 
 
     def _setDst(self, dst):
         self.dst = dst
-        self.connections[dst] = 0
+        self._connections[dst] = 0
         self.alive[dst] = defer.Deferred()
         
 
@@ -69,6 +75,11 @@ class Pipe(protocol.Factory):
         
         @param dst: The client endpoint needed to connect to the receiving
             server.
+        
+        @return: A C{Deferred} which will fire when the last
+            remaining connection from the previous destination has
+            been closed.  It will fire with the previous destination
+            endpoint.
         """
         old_dst = self.dst
         self._setDst(dst)
