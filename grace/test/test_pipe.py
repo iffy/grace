@@ -5,7 +5,7 @@ from twisted.python import log
 
 from grace.test.util import YippyYuckFactory, ClientFactory
 from grace.pipe import Pipe
-
+        
 
 
 class PipeTest(TestCase):
