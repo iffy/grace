@@ -60,3 +60,22 @@ class Plumber:
         """
         s = [x for x in self.pipe_services if x.name == src][0]
         return s.factory
+
+
+    def pipeCommand(self, src, command, *args, **kwargs):
+        """
+        Call a method on one of my L{Pipe}s.
+        
+        @param src: The C{src} endpoint used to add the L{Pipe} with L{addPipe}.
+        
+        @type command: string
+        @param command: Method name on L{Pipe} to execute
+        
+        @param *args: Args passed through to method.
+        @param **kwargs: Keyword arguments passed through to method.
+        
+        @return: Whatever the L{Pipe}'s method returns.
+        """
+        pipe = self.getPipe(src)
+        m = getattr(pipe, command, None)
+        return m(*args, **kwargs)
