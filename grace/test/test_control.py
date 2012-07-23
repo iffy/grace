@@ -2,7 +2,7 @@ from twisted.trial.unittest import TestCase
 from twisted.protocols import amp, loopback
 
 from grace.plumbing import Plumber
-from grace.control import Control
+from grace.control import Server, Client
 
 
 
@@ -30,14 +30,14 @@ class FakePlumber(Plumber):
 
 
 
-class ControlTest(TestCase):
+class ServerTest(TestCase):
 
 
     def test_AMP(self):
         """
         Should be an AMP factory
         """
-        self.assertTrue(issubclass(Control, amp.AMP))
+        self.assertTrue(issubclass(Server, amp.AMP))
 
 
     def test_init(self):
@@ -45,7 +45,7 @@ class ControlTest(TestCase):
         Should accept a Plumber
         """
         p = Plumber()
-        c = Control(p)
+        c = Server(p)
         self.assertEqual(c.plumber, p)
 
 
@@ -53,7 +53,7 @@ class ControlTest(TestCase):
         """
         addPipe should mirror plumber.addPipe
         """
-        c = Control(FakePlumber())
+        c = Server(FakePlumber())
         c.addPipe('foo', 'bar')
         self.assertEqual(c.plumber.called, [
             ('addPipe', 'foo', 'bar'),
@@ -64,7 +64,7 @@ class ControlTest(TestCase):
         """
         rmPipe should mirror plumber.rmPipe
         """
-        c = Control(FakePlumber())
+        c = Server(FakePlumber())
         c.rmPipe('foo')
         self.assertEqual(c.plumber.called, [
             ('rmPipe', 'foo'),
@@ -75,8 +75,10 @@ class ControlTest(TestCase):
         """
         Switching should switch a Pipe's destination.
         """
-        c = Control(FakePlumber())
+        c = Server(FakePlumber())
         c.switch('foo', 'dst2')
         self.assertEqual(c.plumber.called, [
             ('pipeCommand', 'foo', 'switch', ('dst2',), {}),
         ])
+
+

@@ -1,7 +1,7 @@
 from twisted.protocols import amp
 
 
-class Control(amp.AMP):
+class Server(amp.AMP):
     """
     XXX
     """
@@ -21,3 +21,8 @@ class Control(amp.AMP):
 
     def switch(self, key, *args, **kwargs):
         self.plumber.pipeCommand(key, 'switch', *args, **kwargs)
+
+
+
+class Client:
+    pass
