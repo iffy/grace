@@ -25,32 +25,30 @@ class ControlTest(TestCase):
         self.assertEqual(c.plumber, p)
 
 
-    def test_addPipe(self):
+    def assertCallsThrough(self, method, plumber_method, *args, **kwargs):
         """
-        Should call the plumber's addPipe method
+        Assert that calling the L{Control}'s C{method} method will result
+        in a call on the C{plumber_method} with the given arguments.
         """
         p = Plumber()
         called = []
-        p.addPipe = lambda *a: called.append(a)
+        def fake(*a, **kw):
+            called.append((a, kw))
+            return 'result'
+        setattr(p, plumber_method, fake)
         
         c = Control(p)
-        src = 'unix:'+self.mktemp()
-        dst = 'unix:path='+self.mktemp()
-        c.addPipe(src, dst)
-        self.assertEqual(called, [(src, dst)], "Should have called addPipe on"
-                         " the Plumber")
+        r = getattr(c, method)(*args, **kwargs)
+        self.assertEqual(called, [(args, kwargs)], "Calling Control.%s with "
+                         "%r and %r should have resulted in a call to "
+                         "Plumber.%s with the same args and kwargs" % (
+                            method, args, kwargs, plumber_method
+                         ))
+
+
+    def test_addPipe(self):
+        self.assertCallsThrough('addPipe', 'addPipe', 'foo', 'bar')
 
 
     def test_rmPipe(self):
-        """
-        Should pass through to plumber
-        """
-        p = Plumber()
-        called = []
-        p.rmPipe = lambda *a: called.append(a)
-        
-        c = Control(p)
-        src = 'unix:'+self.mktemp()
-        c.rmPipe(src, dst)
-        self.assertEqual(called, [(src,)], "Should have called through to"
-                         " the Plumber")
+        self.assertCallsThrough('rmPipe', 'rmPipe', 'foo', 'bar')

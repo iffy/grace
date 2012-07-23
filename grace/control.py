@@ -13,3 +13,7 @@ class Control(amp.AMP):
 
     def addPipe(self, *args):
         self.plumber.addPipe(*args)
+
+
+    def rmPipe(self, *args):
+        self.plumber.rmPipe(*args)
