@@ -17,3 +17,7 @@ class Control(amp.AMP):
 
     def rmPipe(self, *args):
         self.plumber.rmPipe(*args)
+
+
+    def switch(self, key, *args, **kwargs):
+        self.plumber.pipeCommand(key, 'switch', *args, **kwargs)

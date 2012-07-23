@@ -6,6 +6,30 @@ from grace.control import Control
 
 
 
+class FakePlumber(Plumber):
+
+
+    def __init__(self, results=None):
+        self.called = []
+        self._results = results or {}
+
+
+    def addPipe(self, src, dst):
+        self.called.append(('addPipe', src, dst))
+        return self._results.get('addPipe', None)
+
+
+    def rmPipe(self, src):
+        self.called.append(('rmPipe', src))
+        return self._results.get('rmPipe', None)
+
+
+    def pipeCommand(self, key, cmd, *args, **kwargs):
+        self.called.append(('pipeCommand', key, cmd, args, kwargs))
+        return self._results.get('pipeCommand', None)
+
+
+
 class ControlTest(TestCase):
 
 
@@ -25,30 +49,34 @@ class ControlTest(TestCase):
         self.assertEqual(c.plumber, p)
 
 
-    def assertCallsThrough(self, method, plumber_method, *args, **kwargs):
-        """
-        Assert that calling the L{Control}'s C{method} method will result
-        in a call on the C{plumber_method} with the given arguments.
-        """
-        p = Plumber()
-        called = []
-        def fake(*a, **kw):
-            called.append((a, kw))
-            return 'result'
-        setattr(p, plumber_method, fake)
-        
-        c = Control(p)
-        r = getattr(c, method)(*args, **kwargs)
-        self.assertEqual(called, [(args, kwargs)], "Calling Control.%s with "
-                         "%r and %r should have resulted in a call to "
-                         "Plumber.%s with the same args and kwargs" % (
-                            method, args, kwargs, plumber_method
-                         ))
-
-
     def test_addPipe(self):
-        self.assertCallsThrough('addPipe', 'addPipe', 'foo', 'bar')
+        """
+        addPipe should mirror plumber.addPipe
+        """
+        c = Control(FakePlumber())
+        c.addPipe('foo', 'bar')
+        self.assertEqual(c.plumber.called, [
+            ('addPipe', 'foo', 'bar'),
+        ])
 
 
     def test_rmPipe(self):
-        self.assertCallsThrough('rmPipe', 'rmPipe', 'foo', 'bar')
+        """
+        rmPipe should mirror plumber.rmPipe
+        """
+        c = Control(FakePlumber())
+        c.rmPipe('foo')
+        self.assertEqual(c.plumber.called, [
+            ('rmPipe', 'foo'),
+        ])
+
+
+    def test_switch(self):
+        """
+        Switching should switch a Pipe's destination.
+        """
+        c = Control(FakePlumber())
+        c.switch('foo', 'dst2')
+        self.assertEqual(c.plumber.called, [
+            ('pipeCommand', 'foo', 'switch', ('dst2',), {}),
+        ])
