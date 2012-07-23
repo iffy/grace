@@ -11,4 +11,5 @@ class Control(amp.AMP):
         self.plumber = plumber
 
 
-    def addPipe(self, 
+    def addPipe(self, *args):
+        self.plumber.addPipe(*args)
