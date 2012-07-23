@@ -39,3 +39,18 @@ class ControlTest(TestCase):
         c.addPipe(src, dst)
         self.assertEqual(called, [(src, dst)], "Should have called addPipe on"
                          " the Plumber")
+
+
+    def test_rmPipe(self):
+        """
+        Should pass through to plumber
+        """
+        p = Plumber()
+        called = []
+        p.rmPipe = lambda *a: called.append(a)
+        
+        c = Control(p)
+        src = 'unix:'+self.mktemp()
+        c.rmPipe(src, dst)
+        self.assertEqual(called, [(src,)], "Should have called through to"
+                         " the Plumber")
