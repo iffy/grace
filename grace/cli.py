@@ -66,14 +66,11 @@ class Runner:
         from grace.control import Stop
         from twisted.protocols import amp
 
-        def eb(response):
-            self.fail(response)
-
         fp = FilePath(basedir)
         client = protocol.ClientCreator(reactor, amp.AMP)
         socket = fp.child('grace.socket').path
         r = client.connectUNIX(socket)
-        r.addCallback(lambda p: p.callRemote(Stop)).addErrback(eb)
+        r.addCallback(lambda p: p.callRemote(Stop))
         return r
 
 
@@ -100,6 +97,18 @@ class Runner:
                     print 'Started'
                 reactor.stop()
             r.addCallback(done)
+            reactor.run()
+            sys.exit(self.code)
+        elif options.subCommand == 'stop':
+            self.code = 0
+            r = self.stop(options['basedir'])
+            def cb(result):
+                print 'Stopped'
+                reactor.stop()
+            def eb(result):
+                print 'Error: %s' % result
+                reactor.stop()
+            r.addCallbacks(cb, eb)
             reactor.run()
             sys.exit(self.code)
             
