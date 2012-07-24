@@ -1,4 +1,5 @@
 #!/usr/bin/env python
 
-print 'nothing to see here'
-print 'yet'
+
+from grace.cli import run
+run()
