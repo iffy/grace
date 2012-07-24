@@ -4,7 +4,7 @@ from twisted.internet import defer
 from twisted.python.filepath import FilePath
 
 import commands
-import sys
+import sys, os
 
 
 from grace.cli import Runner

@@ -27,14 +27,13 @@ Then install:
 
 ## Usage ##
 
-XXX no command line stuff is supported yet.  Well, except a meaningless message.
+Start forwarding TCP traffic from port 9000 to port 7500 on the local machine:
+
+    grace start tcp:9000 tcp:host=127.0.0.1:port=7500
 
 
 ## Planned usage not yet supported ##
 
-Start forwarding TCP traffic from port 9000 to port 7500 on the local machine:
-
-    grace start tcp:9000 tcp:host=127.0.0.1:port=7500
 
 Switch traffic from port 7500 to port 7600 (without disconnecting anyone still connected to port 7500):
 

@@ -10,6 +10,7 @@ d = FilePath(__file__).parent()
 #------------------------------------------------------------------------------
 from grace.plumbing import Plumber
 plumber = Plumber()
+plumber.pipe_services.setServiceParent(application)
 
 from grace.control import ServerFactory
 control_factory = ServerFactory(plumber)

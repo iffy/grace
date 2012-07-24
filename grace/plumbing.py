@@ -33,7 +33,7 @@ class Plumber:
         factory = self.pipeFactory(dst)
         s = strports.service(src, factory)
         s.setName(src)
-        self.pipe_services.addService(s)
+        s.setServiceParent(self.pipe_services)
         return s
 
 
@@ -47,7 +47,7 @@ class Plumber:
             listening.
         """
         s = [x for x in self.pipe_services if x.name == src][0]
-        return defer.maybeDeferred(self.pipe_services.removeService, s)
+        return defer.maybeDeferred(s.disownServiceParent)
 
 
     def getPipe(self, src):
