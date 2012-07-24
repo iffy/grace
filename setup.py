@@ -9,6 +9,9 @@ setup(
     packages=[
         'grace', 'grace.test',
     ],
+    package_data={
+        'grace': ['grace.tac'],
+    },
     install_requires=[
         'Twisted>=10.2.0',
     ],
