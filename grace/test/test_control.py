@@ -12,6 +12,7 @@ class FakePlumber(Plumber):
 
 
     def __init__(self, results=None):
+        Plumber.__init__(self)
         self.called = []
         self._results = results or {}
 
@@ -116,6 +117,14 @@ class ServerTest(TestCase):
         c = Server(FakePlumber())
         c.stop()
         self.assertEqual(c.plumber.called, ['stop'])
+
+
+    def test_ls(self):
+        """
+        ls should call through to each plumbers pipe
+        """
+        c = Server(FakePlumber())
+        self.fail('')
 
 
 

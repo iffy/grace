@@ -116,3 +116,17 @@ class PlumberTest(TestCase):
         self.assertEqual(fake_reactor.called, ['stop'])
 
 
+    def test_ls(self):
+        """
+        You can list the details of all pipes
+        """
+        p = Plumber()
+        p.addPipe('unix:foo', 'unix:foo2')
+        p.addPipe('unix:bar', 'unix:bar2')
+        
+        r = list(p.ls())
+        expected = list(p.pipeCommand('unix:bar', 'ls'))
+        expected += list(p.pipeCommand('unix:foo', 'ls'))
+        self.assertEqual(r, expected)
+
+

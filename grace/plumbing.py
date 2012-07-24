@@ -82,6 +82,17 @@ class Plumber:
         return m(*args, **kwargs)
 
 
+    def ls(self):
+        """
+        List all my L{Pipe}s and their status.
+        """
+        keys = [x.name for x in self.pipe_services]
+        keys.sort()
+        for key in keys:
+            for x in self.pipeCommand(key, 'ls'):
+                yield x
+
+
     def stop(self):
         """
         Stop this whole process
