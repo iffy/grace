@@ -22,11 +22,13 @@ def getTac(pipedef=None):
 
 def setupDir(dirname, pipedef):
     """
-    Create a grace directory.
+    Create a grace process directory.
     
-    @param dirname: XXX
-    @param pipedef: XXX
+    @param dirname: Name of the directory to make into a grace process dir.
+    @param pipedef: Argument to pass through to L{getTac} when making the
+        tac file.
     """
     fp = FilePath(dirname)
-    fp.makedirs()
+    if not fp.exists():
+        fp.makedirs()
     fp.child('grace.tac').setContent(getTac(pipedef))

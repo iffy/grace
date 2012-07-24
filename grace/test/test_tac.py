@@ -44,3 +44,18 @@ class setupDirTest(TestCase):
         self.assertTrue(tac.exists(), "Should make the tac file")
         self.assertEqual(tac.getContent(), getTac(('foo', 'bar')),
                          "Should copy the tac template in")
+
+
+    def test_exists(self):
+        """
+        If the directory and a file already exist, overwrite them
+        """
+        tmp = FilePath(self.mktemp())
+        setupDir(tmp.path, ('ape', 'gorilla'))
+        setupDir(tmp.path, ('foo', 'bar'))
+        
+        self.assertTrue(tmp.exists(), "Should make the directory")
+        tac = tmp.child('grace.tac')
+        self.assertTrue(tac.exists(), "Should make the tac file")
+        self.assertEqual(tac.getContent(), getTac(('foo', 'bar')),
+                         "Should copy the tac template in")
