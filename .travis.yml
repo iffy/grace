@@ -1,0 +1,13 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+# no python 3 until Twisted supports it
+#  - "3.2"
+  - "pypy"
+
+install:
+  - python setup.py install
+  - pip install Twisted --use-mirrors
+
+script: trial grace
