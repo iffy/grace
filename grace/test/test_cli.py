@@ -186,7 +186,7 @@ class RunnerTest(TestCase):
         # XXX this is a hack because runner.start does not wait for the server
         # to actually successfully start.  Once that's fixed, you can
         # remove this.
-        _ = yield task.deferLater(reactor, 1.1, lambda:None)
+        _ = yield task.deferLater(reactor, 10.1, lambda:None)
 
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
