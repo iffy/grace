@@ -1,5 +1,6 @@
 from twisted.internet import protocol, defer, reactor, utils
 from twisted.python import usage
+from twisted.python.filepath import FilePath
 
 import commands
 import sys, os
@@ -56,6 +57,26 @@ class Runner:
                             '--python=grace.tac'], env=None, path=basedir)
 
 
+    def stop(self, basedir):
+        """
+        Stop a grace forwarder.
+        
+        @param basedir: Directory with pid file
+        """
+        from grace.control import Stop
+        from twisted.protocols import amp
+
+        def eb(response):
+            self.fail(response)
+
+        fp = FilePath(basedir)
+        client = protocol.ClientCreator(reactor, amp.AMP)
+        socket = fp.child('grace.socket').path
+        r = client.connectUNIX(socket)
+        r.addCallback(lambda p: p.callRemote(Stop)).addErrback(eb)
+        return r
+
+
     def run(self):
         """
         Run a command from the command line.
@@ -100,6 +121,13 @@ class StartOptions(usage.Options):
 
 
 
+class StopOptions(usage.Options):
+
+    synopsis = ''
+    longdesc = ('Stop a running grace process')
+
+
+
 class Options(usage.Options):
 
 
@@ -110,6 +138,7 @@ class Options(usage.Options):
 
     subCommands = [
         ['start', None, StartOptions, "Start forwarding"],
+        ['stop', None, StopOptions, "Stop forwarding"],
     ]
     
     

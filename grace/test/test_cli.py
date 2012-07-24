@@ -1,10 +1,16 @@
 from twisted.trial.unittest import TestCase
 
-from twisted.internet import defer
+from twisted.internet import defer, task, reactor
 from twisted.python.filepath import FilePath
+from twisted.python import log
 
+
+import tempfile
 import commands
 import sys, os
+
+
+grace_root = FilePath(__file__).parent().parent().parent()
 
 
 from grace.cli import Runner
@@ -29,7 +35,27 @@ class FakeRunner(Runner):
 class RunnerTest(TestCase):
 
 
-    timeout = 3
+    timeout = 5
+    
+    
+    def setUp(self):
+        self.old_env = os.environ.get('PYTHONPATH', None)
+        os.environ['PYTHONPATH'] = os.environ['PYTHONPATH']+':'+grace_root.path
+
+
+    def tearDown(self):
+        if self.old_env is None:
+            del os.environ['PYTHONPATH']
+        else:
+            os.environ['PYTHONPATH'] = self.old_env
+
+    
+    def kill(self, pid):
+        import signal
+        try:
+            os.kill(int(pid), signal.SIGTERM)
+        except Exception as e:
+            log.msg('%s' % e)
 
 
     def test_twistd(self):
@@ -82,9 +108,12 @@ class RunnerTest(TestCase):
         """
         runner = FakeRunner()
 
-        root = FilePath(self.mktemp())        
-        src = FilePath(self.mktemp())
-        dst = FilePath(self.mktemp())
+        # I'm getting AF_UNIX path too long errors using self.mktemp()
+        base = FilePath(tempfile.mkdtemp())
+        log.msg('tmpdir: %r' % base.path)
+        root = base.child('root')
+        src = base.child('src')
+        dst = base.child('dst')
         
         r = runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
         def check(response):
@@ -101,10 +130,72 @@ class RunnerTest(TestCase):
                  '--pidfile=grace.pid',
                  '--python=grace.tac'],
             ))
-            self.assertEqual(kwargs, {
-                'path': root.path,
-                'env': None,
-            })
+            self.assertEqual(kwargs['path'], root.path)
+            self.assertEqual(kwargs['env'], None)
         return r.addCallback(check)
+
+
+    def tailUntil(self, filename, text):
+        """
+        Tail a file until you see text
+        """
+        self.tail_d = defer.Deferred()
+        def closefile(r, fh):
+            fh.close()
+            return r
+        fh = open(filename, 'rb')
+        self.tail_d.addCallback(closefile, fh)
+        self.lc = task.LoopingCall(self._lookFor, fh, text)
+        self.lc.start(0.1)
+        return self.tail_d
+
+
+    def _lookFor(self, fh, text):
+        while True:
+            line = fh.readline()
+            if not line:
+                break
+            if text in line:
+                self.lc.stop()
+                self.tail_d.callback(text)
+                log.msg('found: %r' % text)
+                return
+                
+
+    @defer.inlineCallbacks
+    def test_stop(self):
+        """
+        Stop will stop a running process.
+        """
+        runner = Runner()
+
+        # I'm getting AF_UNIX path too long errors using self.mktemp()
+        base = FilePath(tempfile.mkdtemp())
+        log.msg('tmpdir: %r' % base.path)
+        root = base.child('root')
+        src = base.child('src')
+        dst = base.child('dst')
+        
+        _ = yield runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
+        
+        # XXX this is a hack because runner.start does not wait for the server
+        # to actually successfully start.  Once that's fixed, you can
+        # remove this.
+        _ = yield task.deferLater(reactor, 0.1, lambda:None)
+
+        pidfile = root.child('grace.pid')
+        pid = pidfile.getContent()
+        self.addCleanup(self.kill, pid)
+        _ = yield runner.stop(root.path)
+
+        # tail the log until you see Server Shut Down
+        # XXX stop should maybe do the same... so that it doesn't return until
+        # the process has actually stopped.
+        logfile = root.child('grace.log')
+        self.assertTrue(logfile.exists())
+        _ = yield self.tailUntil(logfile.path, 'Server Shut Down.')
+
+        self.assertFalse(pidfile.exists(), "pidfile should be gone: %r" % pidfile.path)
+
 
 
