@@ -39,6 +39,17 @@ class ServerFactoryTest(TestCase):
         self.assertEqual(ServerFactory.protocol, Server)
 
 
+    def test_buildProtocol(self):
+        """
+        Should give the protocol a Plumber
+        """
+        plumber = object()
+        factory = ServerFactory(plumber)
+        proto = factory.buildProtocol('foo')
+        self.assertEqual(proto.factory, factory)
+        self.assertEqual(proto.plumber, plumber)
+
+
 
 class ServerTest(TestCase):
 

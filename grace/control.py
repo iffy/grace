@@ -62,3 +62,13 @@ class ServerFactory(Factory):
 
 
     protocol = Server
+    
+    
+    def __init__(self, plumber):
+        self.plumber = plumber
+
+
+    def buildProtocol(self, addr):
+        proto = self.protocol(self.plumber)
+        proto.factory = self
+        return proto
