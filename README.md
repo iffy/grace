@@ -2,6 +2,7 @@ Graceful swan takes flight.  Hunter eyes his prey.  KABLAM!  Hunter falls.  Swan
 
 ``grace`` lets you restart your server without interrupting current users.  It's a runtime configurable, port forwarder.
 
+[![Build Status](https://secure.travis-ci.org/iffy/grace.png)](http://travis-ci.org/iffy/grace)
 
 ## Installation ##
 
