@@ -233,4 +233,39 @@ class RunnerTest(TestCase):
         ])
 
 
+    @defer.inlineCallbacks
+    def test_switch(self):
+        """
+        Switch should work
+        """
+        runner = Runner()
+
+        # I'm getting AF_UNIX path too long errors using self.mktemp()
+        base = FilePath(tempfile.mkdtemp())
+        log.msg('tmpdir: %r' % base.path)
+        root = base.child('root')
+        src = base.child('src')
+        dst = base.child('dst')
+        
+        _ = yield runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
+        
+        # XXX this is a hack because runner.start does not wait for the server
+        # to actually successfully start.  Once that's fixed, you can
+        # remove this.
+        _ = yield task.deferLater(reactor, 0.1, lambda:None)
+
+        pidfile = root.child('grace.pid')
+        pid = pidfile.getContent()
+        self.addCleanup(self.kill, pid)
+        r = yield runner.switch(root.path, 'unix:'+src.path, 'unix:/foo')
+        r = yield runner.ls(root.path)
+        self.assertEqual(r, [
+            {
+                'src': 'unix:'+src.path,
+                'dst': 'unix:/foo',
+                'conns': 0,
+                'active': True,
+            }
+        ], "Should have switched")
+
 

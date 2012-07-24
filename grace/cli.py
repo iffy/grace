@@ -99,6 +99,31 @@ class Runner:
         return r
 
 
+    def switch(self, basedir, src, dst):
+        """
+        XXX
+        """
+        from grace.control import Switch
+        from twisted.protocols import amp
+
+        fp = FilePath(basedir)
+        client = protocol.ClientCreator(reactor, amp.AMP)
+        socket = fp.child('grace.socket').path
+        r = client.connectUNIX(socket)
+        self.proto = None
+        def gotProto(proto):
+            self.proto = proto
+            return proto.callRemote(Switch, src=src, dst=dst)
+        
+        def gotList(result):
+            self.proto.transport.loseConnection()
+            return result
+        
+        r.addCallback(gotProto)
+        r.addCallback(gotList)
+        return r
+
+
     def run(self):
         """
         Run a command from the command line.
@@ -153,8 +178,18 @@ class Runner:
                 reactor.stop()
             r.addCallbacks(cb, eb)
             reactor.run()
-            sys.exit(self.code)            
-
+            sys.exit(self.code)
+        elif options.subCommand == 'switch':
+            self.code = 0
+            r = self.switch(options['basedir'], so['src'], so['dst'])
+            def cb(result):
+                reactor.stop()
+            def eb(result):
+                print 'Error: %s' % result
+                reactor.stop()
+            r.addCallbacks(cb, eb)
+            reactor.run()
+            sys.exit(self.code)
 
 
 class StartOptions(usage.Options):
@@ -186,6 +221,24 @@ class ListOptions(usage.Options):
 
 
 
+class SwitchOptions(usage.Options):
+
+    synopsis = 'src dst'
+    longdesc = ('`src` is the server endpoint on which grace is currently '
+                'listening.  `dst` is the client endpoint to connect future '
+                'connections to.  For example, if you started grace like this:'
+                '\n\ngrace start tcp:9000 tcp:host=127.0.0.1:port=8700'
+                '\n\nThen you can switch traffic from port 8700 to another by '
+                'doing this:'
+                '\n\ngrace switch tcp:9000 tcp:host=127.0.0.1:port=6000')
+
+
+    def parseArgs(self, src, dst):
+        self['src'] = src
+        self['dst'] = dst
+
+
+
 class Options(usage.Options):
 
 
@@ -198,6 +251,7 @@ class Options(usage.Options):
         ['start', None, StartOptions, "Start forwarding"],
         ['stop', None, StopOptions, "Stop forwarding"],
         ['ls', None, ListOptions, "List forwards"],
+        ['switch', 'x', SwitchOptions, "Switch forwarding"],
     ]
     
     

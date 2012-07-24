@@ -59,6 +59,10 @@ class Pipe(protocol.Factory):
 
     def removeConnection(self, dst, conn):
         self._connections[dst] -= 1
+        self._expireDst(dst)
+
+
+    def _expireDst(self, dst):
         if self._connections[dst] == 0 and dst != self.dst:
             self.alive[dst].callback(dst)
             del self._connections[dst]
@@ -85,7 +89,9 @@ class Pipe(protocol.Factory):
         """
         old_dst = self.dst
         self._setDst(dst)
-        return self.alive[old_dst]
+        r = self.alive[old_dst]
+        self._expireDst(old_dst)
+        return r
 
 
     def ls(self):

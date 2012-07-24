@@ -230,5 +230,11 @@ class PipeTest(TestCase):
         self.assertEqual(p.alive.keys(), ['bar'], "Only active or"
                          " still working endpoints should be "
                          "listed")
+        p.switch('foo')
+        self.assertEqual(set(p.ls()), set([
+            ('foo', 0, True),
+        ]))
+        self.assertEqual(p.alive.keys(), ['foo'], "Only active or"
+                         " still working endpoints should be listed")
 
 
