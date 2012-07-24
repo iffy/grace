@@ -1,9 +1,35 @@
 from twisted.protocols import amp
 
+class AddPipe(amp.Command):
+    
+    arguments = [
+        ('src', amp.String()),
+        ('dst', amp.String()),
+    ]
+    response = []
+
+
+class RemovePipe(amp.Command):
+    
+    arguments = [
+        ('src', amp.String()),
+    ]
+    response = []
+
+
+class Switch(amp.Command):
+    
+    arguments = [
+        ('src', amp.String()),
+        ('dst', amp.String()),
+    ]
+    response = []
+
+
 
 class Server(amp.AMP):
     """
-    XXX
+    Administration server protocol
     """
     
     
@@ -11,18 +37,20 @@ class Server(amp.AMP):
         self.plumber = plumber
 
 
-    def addPipe(self, *args):
-        self.plumber.addPipe(*args)
+    @AddPipe.responder
+    def addPipe(self, src, dst):
+        self.plumber.addPipe(src, dst)
+        return {}
 
 
-    def rmPipe(self, *args):
-        self.plumber.rmPipe(*args)
+    @RemovePipe.responder
+    def rmPipe(self, src):
+        self.plumber.rmPipe(src)
+        return {}
 
 
-    def switch(self, key, *args, **kwargs):
-        self.plumber.pipeCommand(key, 'switch', *args, **kwargs)
+    @Switch.responder
+    def switch(self, src, dst):
+        self.plumber.pipeCommand(src, 'switch', dst)
+        return {}
 
-
-
-class Client:
-    pass

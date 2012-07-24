@@ -2,7 +2,7 @@ from twisted.trial.unittest import TestCase
 from twisted.protocols import amp, loopback
 
 from grace.plumbing import Plumber
-from grace.control import Server, Client
+from grace.control import Server, AddPipe, RemovePipe, Switch
 
 
 
@@ -81,4 +81,81 @@ class ServerTest(TestCase):
             ('pipeCommand', 'foo', 'switch', ('dst2',), {}),
         ])
 
+
+
+class SingleCommandClient(amp.AMP):
+    
+        def __init__(self, cmd, *args, **kwargs):
+            amp.AMP.__init__(self)
+            self.cmd = cmd
+            self.args = args
+            self.kwargs = kwargs
+            self.response = None
+
+
+        def connectionMade(self):
+            amp.AMP.connectionMade(self)
+            d = self.callRemote(self.cmd, *self.args, **self.kwargs)
+            return d.addCallback(self.gotResponse)
+
+
+        def gotResponse(self, response):
+            self.response = response
+            self.transport.loseConnection()
+            return response
+
+
+
+class ClientTest(TestCase):
+
+
+    timeout = 3
+
+
+    def test_AddPipe(self):
+        """
+        You can add a pipe.
+        """
+        server = Server(FakePlumber())
+        client = SingleCommandClient(AddPipe, src='foo', dst='bar')
+
+        from twisted.protocols.loopback import loopbackAsync
+        def check(response):
+            self.assertEqual(server.plumber.called, [
+                ('addPipe', 'foo', 'bar'),
+            ])
+        r = loopbackAsync(server, client)
+        return r.addCallback(check)
+
+
+    def test_RemovePipe(self):
+        """
+        You can remove a pipe.
+        """
+        server = Server(FakePlumber())
+        client = SingleCommandClient(RemovePipe, src='foo')
+
+        from twisted.protocols.loopback import loopbackAsync
+        def check(response):
+            self.assertEqual(server.plumber.called, [
+                ('rmPipe', 'foo'),
+            ])
+        r = loopbackAsync(server, client)
+        return r.addCallback(check)        
+
+
+    def test_Switch(self):
+        """
+        You can switch forwarding
+        """
+        server = Server(FakePlumber())
+        client = SingleCommandClient(Switch, src='foo', dst='bar')
+
+        from twisted.protocols.loopback import loopbackAsync
+        def check(response):
+            self.assertEqual(server.plumber.called, [
+                ('pipeCommand', 'foo', 'switch', ('bar',), {}),
+            ])
+        r = loopbackAsync(server, client)
+        return r.addCallback(check) 
 
