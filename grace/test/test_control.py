@@ -3,7 +3,8 @@ from twisted.protocols import amp, loopback
 from twisted.internet.protocol import Factory
 
 from grace.plumbing import Plumber
-from grace.control import Server, AddPipe, RemovePipe, Switch, ServerFactory
+from grace.control import Server, ServerFactory
+from grace.control import AddPipe, RemovePipe, Switch, Stop
 
 
 
@@ -28,6 +29,11 @@ class FakePlumber(Plumber):
     def pipeCommand(self, key, cmd, *args, **kwargs):
         self.called.append(('pipeCommand', key, cmd, args, kwargs))
         return self._results.get('pipeCommand', None)
+
+
+    def stop(self):
+        self.called.append('stop')
+        return self._results.get('stop', None)
 
 
 
@@ -101,6 +107,15 @@ class ServerTest(TestCase):
         self.assertEqual(c.plumber.called, [
             ('pipeCommand', 'foo', 'switch', ('dst2',), {}),
         ])
+
+
+    def test_stop(self):
+        """
+        Stop should mirror plumber.stop
+        """
+        c = Server(FakePlumber())
+        c.stop()
+        self.assertEqual(c.plumber.called, ['stop'])
 
 
 
@@ -178,5 +193,20 @@ class ClientTest(TestCase):
                 ('pipeCommand', 'foo', 'switch', ('bar',), {}),
             ])
         r = loopbackAsync(server, client)
-        return r.addCallback(check) 
+        return r.addCallback(check)
+
+
+    def test_Stop(self):
+        """
+        You can stop the whole server.
+        """
+        server = Server(FakePlumber())
+        client = SingleCommandClient(Stop)
+
+        from twisted.protocols.loopback import loopbackAsync
+        def check(response):
+            self.assertEqual(server.plumber.called, ['stop'])
+        r = loopbackAsync(server, client)
+        return r.addCallback(check)
+
 

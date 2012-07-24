@@ -29,6 +29,12 @@ class Switch(amp.Command):
     response = []
 
 
+class Stop(amp.Command):
+    
+    arguments = []
+    response = []
+
+
 
 class Server(amp.AMP):
     """
@@ -55,6 +61,12 @@ class Server(amp.AMP):
     @Switch.responder
     def switch(self, src, dst):
         self.plumber.pipeCommand(src, 'switch', dst)
+        return {}
+
+    
+    @Stop.responder
+    def stop(self):
+        self.plumber.stop()
         return {}
 
 
