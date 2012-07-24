@@ -10,4 +10,4 @@ install:
   - python setup.py install
   - pip install Twisted --use-mirrors
 
-script: trial grace
+script: bash .run.travis.run.sh
