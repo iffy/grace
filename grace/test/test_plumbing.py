@@ -125,8 +125,8 @@ class PlumberTest(TestCase):
         p.addPipe('unix:bar', 'unix:bar2')
         
         r = list(p.ls())
-        expected = list(p.pipeCommand('unix:bar', 'ls'))
-        expected += list(p.pipeCommand('unix:foo', 'ls'))
+        expected = [tuple(['unix:bar']+list(x)) for x in p.pipeCommand('unix:bar', 'ls')]
+        expected += [tuple(['unix:foo']+list(x)) for x in p.pipeCommand('unix:foo', 'ls')]
         self.assertEqual(r, expected)
 
 

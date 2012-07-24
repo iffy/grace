@@ -90,7 +90,7 @@ class Plumber:
         keys.sort()
         for key in keys:
             for x in self.pipeCommand(key, 'ls'):
-                yield x
+                yield tuple([key] + list(x))
 
 
     def stop(self):
