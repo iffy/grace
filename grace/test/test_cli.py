@@ -40,7 +40,9 @@ class RunnerTest(TestCase):
     
     def setUp(self):
         self.old_env = os.environ.get('PYTHONPATH', None)
-        os.environ['PYTHONPATH'] = os.environ['PYTHONPATH']+':'+grace_root.path
+        if not self.old_env:
+            os.environ['PYTHONPATH'] = ''
+        os.environ['PYTHONPATH'] += ':' + grace_root.path
 
 
     def tearDown(self):
