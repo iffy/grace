@@ -35,7 +35,7 @@ class FakeRunner(Runner):
 class RunnerTest(TestCase):
 
 
-    timeout = 5
+    timeout = 15
     
     
     def setUp(self):
