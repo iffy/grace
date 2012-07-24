@@ -17,3 +17,16 @@ def getTac(pipedef=None):
     if pipedef:
         template += '\nplumber.addPipe(%r, %r)\n' % pipedef
     return template
+
+
+
+def setupDir(dirname, pipedef):
+    """
+    Create a grace directory.
+    
+    @param dirname: XXX
+    @param pipedef: XXX
+    """
+    fp = FilePath(dirname)
+    fp.makedirs()
+    fp.child('grace.tac').setContent(getTac(pipedef))
