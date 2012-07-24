@@ -10,22 +10,47 @@ from grace.tac import setupDir
 
 
 class Runner:
+    """
+    I interface between the command line and grace.
+    """
 
     
     def _twistdBin(self):
         """
         Get the path to the twistd executable.
+        
+        @return: Full path to C{twistd} exectuable.
         """
         # XXX what problems will this cause by blocking?
         return commands.getoutput('which twistd')
 
 
     def twistd(self, *args, **kwargs):
+        """
+        Run the C{twistd} command-line executable with the given arguments.
+        
+        @param *args: Passed through to
+            C{twisted.internet.utils.getProcessOutputAndValue}.
+        @param *kwargs: Passed through to
+            C{twisted.internet.utils.getProcessOutputAndValue}.
+        
+        @return: C{Deferred} which fires with (out, err, code) tuple.
+        """
         twistd = self._twistdBin()
         return utils.getProcessOutputAndValue(twistd, *args, **kwargs)
 
 
     def start(self, basedir, src, dst):
+        """
+        Start a grace forwarder.
+        
+        @param basedir: Directory to put the configuration, log and pid files.
+        @param src: Listening endpoint
+        @param dst: Connecting endpoint
+        
+        @return: C{Deferred} which fires with (out, err, code) tuple from
+            running C{twistd} to start the process.
+        """
         setupDir(basedir, (src, dst))
         return self.twistd(['--logfile=grace.log', '--pidfile=grace.pid',
                             '--python=grace.tac'], env=None, path=basedir)
@@ -33,6 +58,7 @@ class Runner:
 
     def run(self):
         """
+        Run a command from the command line.
         """
         options = Options()
         options.parseOptions()
@@ -94,3 +120,6 @@ class Options(usage.Options):
 
 _runner = Runner()
 run = _runner.run
+
+
+
