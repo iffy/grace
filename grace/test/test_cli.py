@@ -85,6 +85,9 @@ class RunnerTest(TestCase):
                       path=path.path)
         def check(result):
             out, err, code = result
+            log.msg('out: %s' % out)
+            log.msg('err: %s' % err)
+            log.msg('code: %s' % code)
             self.assertEqual(code, 4)
             self.assertEqual(out, 
                 'foo bar baz\n'
@@ -183,7 +186,7 @@ class RunnerTest(TestCase):
         # XXX this is a hack because runner.start does not wait for the server
         # to actually successfully start.  Once that's fixed, you can
         # remove this.
-        _ = yield task.deferLater(reactor, 0.1, lambda:None)
+        _ = yield task.deferLater(reactor, 1.1, lambda:None)
 
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
@@ -219,7 +222,7 @@ class RunnerTest(TestCase):
         # XXX this is a hack because runner.start does not wait for the server
         # to actually successfully start.  Once that's fixed, you can
         # remove this.
-        _ = yield task.deferLater(reactor, 0.1, lambda:None)
+        _ = yield task.deferLater(reactor, 1.1, lambda:None)
 
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
@@ -254,7 +257,7 @@ class RunnerTest(TestCase):
         # XXX this is a hack because runner.start does not wait for the server
         # to actually successfully start.  Once that's fixed, you can
         # remove this.
-        _ = yield task.deferLater(reactor, 0.1, lambda:None)
+        _ = yield task.deferLater(reactor, 1.1, lambda:None)
 
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
