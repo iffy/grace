@@ -1,5 +1,6 @@
 from twisted.trial.unittest import TestCase
 from twisted.application import service
+from twisted.internet import reactor
 
 
 from grace.plumbing import Plumber
@@ -19,6 +20,7 @@ class PlumberTest(TestCase):
         p = Plumber()
         self.assertEqual(p.pipeFactory, Pipe)
         self.assertTrue(isinstance(p.pipe_services, service.MultiService))
+        self.assertEqual(p._reactor, reactor)
 
 
     def test_addPipe(self):
@@ -95,5 +97,22 @@ class PlumberTest(TestCase):
             (('arg1', 'arg2'), {'kw1':'foo', 'kw2':'bar'}),
         ], "Should have passed all the appropriate args through")
 
+
+    def test_stop(self):
+        """
+        You can stop the whole process.
+        """
+        class FakeReactor:
+        
+            called = []
+        
+            def stop(self):
+                self.called.append('stop')
+
+        fake_reactor = FakeReactor()
+        p = Plumber(_reactor=fake_reactor)
+        self.assertEqual(p._reactor, fake_reactor)
+        p.stop()
+        self.assertEqual(fake_reactor.called, ['stop'])
 
 

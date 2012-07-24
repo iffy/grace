@@ -1,5 +1,5 @@
 
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 from twisted.application import service, strports
 
 
@@ -15,8 +15,9 @@ class Plumber:
     pipeFactory = Pipe
 
 
-    def __init__(self):
+    def __init__(self, _reactor=None):
         self.pipe_services = service.MultiService()
+        self._reactor = _reactor or reactor
 
 
     def addPipe(self, src, dst):
@@ -79,3 +80,12 @@ class Plumber:
         pipe = self.getPipe(src)
         m = getattr(pipe, command, None)
         return m(*args, **kwargs)
+
+
+    def stop(self):
+        """
+        Stop this whole process
+        """
+        self._reactor.stop()
+
+
