@@ -4,7 +4,7 @@ from twisted.internet.protocol import Factory
 
 from grace.plumbing import Plumber
 from grace.control import Server, ServerFactory
-from grace.control import AddPipe, RemovePipe, Switch, Stop
+from grace.control import AddPipe, RemovePipe, Switch, Stop, List
 
 
 
@@ -35,6 +35,11 @@ class FakePlumber(Plumber):
     def stop(self):
         self.called.append('stop')
         return self._results.get('stop', None)
+
+
+    def ls(self):
+        self.called.append('ls')
+        return self._results.get('ls', None)
 
 
 
@@ -121,10 +126,37 @@ class ServerTest(TestCase):
 
     def test_ls(self):
         """
-        ls should call through to each plumbers pipe
+        ls should call through to the plumber and return a dictionary ready
+        for AMP
         """
-        c = Server(FakePlumber())
-        self.fail('')
+        c = Server(FakePlumber({
+            'ls': [
+                ('foo', 'thing1', 0, True),
+                ('bar', 'thing2', 1, False),
+                ('bar', 'thing3', 12, True),
+            ]
+        }))
+        r = c.ls()
+        self.assertEqual(r['pipes'], [
+            {
+                'src': 'foo',
+                'dst': 'thing1',
+                'conns': 0,
+                'active': True,
+            },
+            {
+                'src': 'bar',
+                'dst': 'thing2',
+                'conns': 1,
+                'active': False,
+            },
+            {
+                'src': 'bar',
+                'dst': 'thing3',
+                'conns': 12,
+                'active': True,
+            },
+        ])
 
 
 
@@ -218,4 +250,31 @@ class ClientTest(TestCase):
         r = loopbackAsync(server, client)
         return r.addCallback(check)
 
+
+    def test_List(self):
+        """
+        You can get a listing
+        """
+        server = Server(FakePlumber({
+            'ls': [
+                ('foo', 'bar', 12, True),
+            ]
+        }))
+        client = SingleCommandClient(List)
+
+        from twisted.protocols.loopback import loopbackAsync
+        def check(response):
+            self.assertEqual(server.plumber.called, ['ls'])
+            self.assertEqual(client.response, {
+                'pipes': [
+                    {
+                        'src': 'foo',
+                        'dst': 'bar',
+                        'conns': 12,
+                        'active': True,
+                    },
+                ]
+            })
+        r = loopbackAsync(server, client)
+        return r.addCallback(check)
 

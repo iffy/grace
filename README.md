@@ -32,6 +32,11 @@ Start forwarding TCP traffic from port 9000 to port 7500 on the local machine:
     grace start tcp:9000 tcp:host=127.0.0.1:port=7500
 
 
+List forwarding rules:
+
+    grace ls
+
+
 Stop forwarding:
 
     grace stop
@@ -43,10 +48,6 @@ Stop forwarding:
 Switch traffic from port 7500 to port 7600 (without disconnecting anyone still connected to port 7500):
 
     grace switch tcp:host=127.0.0.1:port=7600
-
-List forwarding rules:
-
-    grace ls
 
 Wait for previous forwards to finish:
 

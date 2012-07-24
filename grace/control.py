@@ -35,6 +35,20 @@ class Stop(amp.Command):
     response = []
 
 
+class List(amp.Command):
+
+    response = [
+        ('pipes', amp.AmpList(
+            [
+                ('src', amp.String()),
+                ('dst', amp.String()),
+                ('conns', amp.Integer()),
+                ('active', amp.Boolean()),
+            ]
+        )),
+    ]
+
+
 
 class Server(amp.AMP):
     """
@@ -68,6 +82,20 @@ class Server(amp.AMP):
     def stop(self):
         self.plumber.stop()
         return {}
+
+
+    @List.responder
+    def ls(self):
+        r = list(self.plumber.ls())
+        pipes = []
+        for src,dst,conns,active in r:
+            pipes.append({
+                'src': src,
+                'dst': dst,
+                'conns': conns,
+                'active': active,
+            })
+        return {'pipes':pipes}
 
 
 class ServerFactory(Factory):

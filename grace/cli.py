@@ -74,6 +74,31 @@ class Runner:
         return r
 
 
+    def ls(self, basedir):
+        """
+        XXX
+        """
+        from grace.control import List
+        from twisted.protocols import amp
+
+        fp = FilePath(basedir)
+        client = protocol.ClientCreator(reactor, amp.AMP)
+        socket = fp.child('grace.socket').path
+        r = client.connectUNIX(socket)
+        self.proto = None
+        def gotProto(proto):
+            self.proto = proto
+            return proto.callRemote(List)
+        
+        def gotList(result):
+            self.proto.transport.loseConnection()
+            return result['pipes']
+        
+        r.addCallback(gotProto)
+        r.addCallback(gotList)
+        return r
+
+
     def run(self):
         """
         Run a command from the command line.
@@ -111,7 +136,24 @@ class Runner:
             r.addCallbacks(cb, eb)
             reactor.run()
             sys.exit(self.code)
-            
+        elif options.subCommand == 'ls':
+            self.code = 0
+            r = self.ls(options['basedir'])
+            def cb(result):
+                print 'src dst connections status'
+                for row in result:
+                    if row['active']:
+                        row['active'] = 'active'
+                    else:
+                        row['active'] = 'inactive'
+                    print '%(src)s %(dst)s %(conns)s %(active)s' % row
+                reactor.stop()
+            def eb(result):
+                print 'Error: %s' % result
+                reactor.stop()
+            r.addCallbacks(cb, eb)
+            reactor.run()
+            sys.exit(self.code)            
 
 
 
@@ -137,6 +179,13 @@ class StopOptions(usage.Options):
 
 
 
+class ListOptions(usage.Options):
+
+    synopsis = ''
+    longdesc = ('List current forwarding rules')
+
+
+
 class Options(usage.Options):
 
 
@@ -148,6 +197,7 @@ class Options(usage.Options):
     subCommands = [
         ['start', None, StartOptions, "Start forwarding"],
         ['stop', None, StopOptions, "Stop forwarding"],
+        ['ls', None, ListOptions, "List forwards"],
     ]
     
     
