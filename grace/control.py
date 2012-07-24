@@ -1,4 +1,7 @@
 from twisted.protocols import amp
+from twisted.internet.protocol import Factory
+
+
 
 class AddPipe(amp.Command):
     
@@ -54,3 +57,8 @@ class Server(amp.AMP):
         self.plumber.pipeCommand(src, 'switch', dst)
         return {}
 
+
+class ServerFactory(Factory):
+
+
+    protocol = Server

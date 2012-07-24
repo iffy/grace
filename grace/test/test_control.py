@@ -1,8 +1,9 @@
 from twisted.trial.unittest import TestCase
 from twisted.protocols import amp, loopback
+from twisted.internet.protocol import Factory
 
 from grace.plumbing import Plumber
-from grace.control import Server, AddPipe, RemovePipe, Switch
+from grace.control import Server, AddPipe, RemovePipe, Switch, ServerFactory
 
 
 
@@ -27,6 +28,15 @@ class FakePlumber(Plumber):
     def pipeCommand(self, key, cmd, *args, **kwargs):
         self.called.append(('pipeCommand', key, cmd, args, kwargs))
         return self._results.get('pipeCommand', None)
+
+
+
+class ServerFactoryTest(TestCase):
+
+
+    def test_protocol(self):
+        self.assertTrue(issubclass(ServerFactory, Factory))
+        self.assertEqual(ServerFactory.protocol, Server)
 
 
 
