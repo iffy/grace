@@ -8,6 +8,7 @@ python:
 matrix:
     allow_failures:
         - python: "3.2"
+        - python: "pypy"
 
 install:
   - python setup.py install
