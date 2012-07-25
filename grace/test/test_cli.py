@@ -35,7 +35,7 @@ class FakeRunner(Runner):
 class RunnerTest(TestCase):
 
 
-    timeout = 15
+    timeout = 5
     
     
     def setUp(self):
@@ -75,6 +75,7 @@ class RunnerTest(TestCase):
                                 'sys.stderr.write("error\\n")\n'
                                 'print "stdout"\n'
                                 'sys.exit(4)\n' % sys.executable)
+        log.msg('fake_twistd: %s' % fake_twistd.getContent())
         fake_twistd.chmod(0777)
         runner._twistdBin = lambda: fake_twistd.path
         
@@ -186,7 +187,7 @@ class RunnerTest(TestCase):
         # XXX this is a hack because runner.start does not wait for the server
         # to actually successfully start.  Once that's fixed, you can
         # remove this.
-        _ = yield task.deferLater(reactor, 10.1, lambda:None)
+        _ = yield task.deferLater(reactor, 0.1, lambda:None)
 
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
@@ -222,7 +223,7 @@ class RunnerTest(TestCase):
         # XXX this is a hack because runner.start does not wait for the server
         # to actually successfully start.  Once that's fixed, you can
         # remove this.
-        _ = yield task.deferLater(reactor, 1.1, lambda:None)
+        _ = yield task.deferLater(reactor, 0.1, lambda:None)
 
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
@@ -257,7 +258,7 @@ class RunnerTest(TestCase):
         # XXX this is a hack because runner.start does not wait for the server
         # to actually successfully start.  Once that's fixed, you can
         # remove this.
-        _ = yield task.deferLater(reactor, 1.1, lambda:None)
+        _ = yield task.deferLater(reactor, 0.1, lambda:None)
 
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
