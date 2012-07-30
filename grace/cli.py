@@ -1,4 +1,4 @@
-from twisted.internet import protocol, defer, reactor, utils
+from twisted.internet import protocol, defer, reactor, utils, task
 from twisted.python import usage
 from twisted.python.filepath import FilePath
 
@@ -53,8 +53,32 @@ class Runner:
             running C{twistd} to start the process.
         """
         setupDir(basedir, (src, dst))
-        return self.twistd(['--logfile=grace.log', '--pidfile=grace.pid',
-                            '--python=grace.tac'], env=None, path=basedir)
+        r = self.twistd(['--logfile=grace.log', '--pidfile=grace.pid',
+                         '--python=grace.tac'], env=None, path=basedir)
+        
+        def cb(result, basedir):
+            socket = self._waitForFile(FilePath(basedir).child('grace.socket'))
+            return socket.addCallback(lambda x:result)
+        return r.addCallback(cb, basedir)
+
+
+    def _waitForFile(self, filepath):
+        """
+        Start waiting for a file
+        """
+        d = defer.Deferred()
+        def f(filepath, d):
+            if filepath.exists():
+                d.callback(None)
+                
+        lc = task.LoopingCall(f, filepath, d)
+        lc.start(0.1)
+        
+        def cb(result, lc):
+            lc.stop()
+            return
+        return d.addCallback(cb, lc)
+        
 
 
     def stop(self, basedir):

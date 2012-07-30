@@ -104,39 +104,6 @@ class RunnerTest(TestCase):
         self.assertEqual(runner._twistdBin(), path)
 
 
-    def test_start(self):
-        """
-        Start will create a directory and call twistd for the created tac file
-        """
-        runner = FakeRunner()
-
-        # I'm getting AF_UNIX path too long errors using self.mktemp()
-        base = FilePath(tempfile.mkdtemp())
-        log.msg('tmpdir: %r' % base.path)
-        root = base.child('root')
-        src = base.child('src')
-        dst = base.child('dst')
-        
-        r = runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
-        def check(response):
-            self.assertTrue(root.exists(), "Should have made the root dir")
-            tac = root.child('grace.tac')
-            self.assertTrue(tac.exists(), "Should have made grace.tac")
-            self.assertEqual(tac.getContent(),
-                getTac(('unix:'+src.path, 'unix:'+dst.path)),
-                "Should have made the tac file using getTac")
-            self.assertEqual(len(runner.called), 1, "Should have called twistd")
-            args, kwargs = runner.called[0]
-            self.assertEqual(args, (
-                ['--logfile=grace.log',
-                 '--pidfile=grace.pid',
-                 '--python=grace.tac'],
-            ))
-            self.assertEqual(kwargs['path'], root.path)
-            self.assertEqual(kwargs['env'], None)
-        return r.addCallback(check)
-
-
     def tailUntil(self, filename, text):
         """
         Tail a file until you see text
@@ -162,7 +129,34 @@ class RunnerTest(TestCase):
                 self.tail_d.callback(text)
                 log.msg('found: %r' % text)
                 return
-                
+
+    @defer.inlineCallbacks
+    def test_start_waits(self):
+        """
+        Start should not return until it's actually working.
+        """
+        runner = Runner()
+        
+        base = FilePath(tempfile.mkdtemp())
+        root = base.child('root')
+        src = base.child('src')
+        dst = base.child('dst')
+        
+        _ = yield runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
+
+        self.assertTrue(root.child('grace.pid').exists(), "Should have a pid")
+        pid = root.child('grace.pid').getContent().strip()
+        self.addCleanup(self.kill, pid)
+        self.assertTrue(root.child('grace.socket').exists(), "Should have a "
+                        "socket")
+        
+        self.assertTrue(root.exists(), "Should have made the root dir")
+        tac = root.child('grace.tac')
+        self.assertTrue(tac.exists(), "Should have made grace.tac")
+        self.assertEqual(tac.getContent(),
+            getTac(('unix:'+src.path, 'unix:'+dst.path)),
+            "Should have made the tac file using getTac")
+
 
     @defer.inlineCallbacks
     def test_stop(self):
