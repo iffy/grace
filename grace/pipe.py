@@ -71,6 +71,7 @@ class Pipe(protocol.Factory):
             if len(self.alive) == 1:
                 for w in self._waiters:
                     w.callback(self)
+                self._waiters = []
 
 
     def _setDst(self, dst):

@@ -397,3 +397,28 @@ class PipeTest(TestCase):
         self.assertTrue(foo_d.called)
 
 
+    def test_wait_wait(self):
+        """
+        Calling wait multiple times should behave correctly
+        """
+        pipe = Pipe('foo')
+        
+        proto = object()
+        pipe.addConnection('foo', proto)
+        pipe.switch('bar')
+        
+        wait = pipe.wait()
+        pipe.removeConnection('foo', proto)
+        self.assertTrue(wait.called)
+        
+        pipe.switch('foo')
+        proto = object()
+        pipe.addConnection('foo', proto)
+        pipe.switch('bar')
+        
+        wait = pipe.wait()
+        pipe.removeConnection('foo', proto)
+        self.assertTrue(wait.called)
+        
+
+
