@@ -174,11 +174,6 @@ class RunnerTest(TestCase):
         
         _ = yield runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
         
-        # XXX this is a hack because runner.start does not wait for the server
-        # to actually successfully start.  Once that's fixed, you can
-        # remove this.
-        _ = yield task.deferLater(reactor, 0.1, lambda:None)
-
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
         self.addCleanup(self.kill, pid)
@@ -210,11 +205,6 @@ class RunnerTest(TestCase):
         
         _ = yield runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
         
-        # XXX this is a hack because runner.start does not wait for the server
-        # to actually successfully start.  Once that's fixed, you can
-        # remove this.
-        _ = yield task.deferLater(reactor, 0.1, lambda:None)
-
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
         self.addCleanup(self.kill, pid)
@@ -245,11 +235,6 @@ class RunnerTest(TestCase):
         
         _ = yield runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
         
-        # XXX this is a hack because runner.start does not wait for the server
-        # to actually successfully start.  Once that's fixed, you can
-        # remove this.
-        _ = yield task.deferLater(reactor, 0.1, lambda:None)
-
         pidfile = root.child('grace.pid')
         pid = pidfile.getContent()
         self.addCleanup(self.kill, pid)
