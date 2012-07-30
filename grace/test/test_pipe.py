@@ -191,6 +191,38 @@ class PipeTest(TestCase):
                          "forwarding to that endpoint")
 
 
+    def test_switch_back(self):
+        """
+        If you switch forwarding to one dst, then switch back, the original
+        destination's Deferred should not fire, but the intermediate destination
+        should.
+        """
+        # X -> foo
+        p = Pipe('foo')
+        foo_d = p.alive['foo'] 
+        proto1 = object()
+        p.addConnection('foo', proto1)
+        
+        # X -> bar
+        p.switch('bar')
+        bar_d = p.alive['bar']
+        proto2 = object()
+        p.addConnection('bar', proto2)
+        
+        # X -> foo
+        p.switch('foo')
+        p.removeConnection('foo', proto1)
+        
+        self.assertFalse(foo_d.called, "Should not have called"
+                         " since that is where the current forwarding is")
+        self.assertEqual(p._connections['foo'], 0)
+        self.assertFalse(bar_d.called)
+        
+        p.removeConnection('bar', proto2)
+        self.assertTrue(bar_d.called)
+        
+
+
     def test_ls(self):
         """
         You should be able to list the endpoints currently 

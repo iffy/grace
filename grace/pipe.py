@@ -71,7 +71,8 @@ class Pipe(protocol.Factory):
 
     def _setDst(self, dst):
         self.dst = dst
-        self._connections[dst] = 0
+        if dst not in self._connections:
+            self._connections[dst] = 0
         self.alive[dst] = defer.Deferred()
         
 
