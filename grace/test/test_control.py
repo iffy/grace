@@ -1,10 +1,11 @@
 from twisted.trial.unittest import TestCase
 from twisted.protocols import amp, loopback
 from twisted.internet.protocol import Factory
+from twisted.internet import defer
 
 from grace.plumbing import Plumber
 from grace.control import Server, ServerFactory
-from grace.control import AddPipe, RemovePipe, Switch, Stop, List
+from grace.control import AddPipe, RemovePipe, Switch, Stop, List, Wait
 
 
 
@@ -159,6 +160,25 @@ class ServerTest(TestCase):
         ])
 
 
+    def test_wait(self):
+        """
+        Wait should wait
+        """
+        ret = defer.Deferred()
+        c = Server(FakePlumber({
+            'pipeCommand': ret,
+        }))
+        r = c.wait('foo')
+        self.assertEqual(c.plumber.called, [
+            ('pipeCommand', 'foo', 'wait', (), {}),
+        ])
+        self.assertFalse(r.called)
+        ret.callback(None)        
+        def check(response):
+            self.assertEqual(response, {})
+        return r.addCallback(check)
+
+
 
 class SingleCommandClient(amp.AMP):
     
@@ -277,4 +297,26 @@ class ClientTest(TestCase):
             })
         r = loopbackAsync(server, client)
         return r.addCallback(check)
+
+
+    def test_Wait(self):
+        """
+        You can wait for connections to settle.
+        """
+        wait_ret = defer.Deferred()
+        server = Server(FakePlumber({
+            'pipeCommand': wait_ret,
+        }))
+        client = SingleCommandClient(Wait, src='foo')
+        
+        from twisted.protocols.loopback import loopbackAsync
+        def check(response):
+            self.assertEqual(server.plumber.called, [
+                ('pipeCommand', 'foo', 'wait', (), {}),
+            ])
+        r = loopbackAsync(server, client)
+        self.assertFalse(r.called)
+        wait_ret.callback(None)
+        return r.addCallback(check)
+        
 

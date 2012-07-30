@@ -35,6 +35,14 @@ class Stop(amp.Command):
     response = []
 
 
+class Wait(amp.Command):
+
+    arguments = [
+        ('src', amp.String()),
+    ]
+    response = []
+
+
 class List(amp.Command):
 
     response = [
@@ -96,6 +104,13 @@ class Server(amp.AMP):
                 'active': active,
             })
         return {'pipes':pipes}
+
+
+    @Wait.responder
+    def wait(self, src):
+        r = self.plumber.pipeCommand(src, 'wait')
+        r.addCallback(lambda x: {})
+        return r
 
 
 class ServerFactory(Factory):
