@@ -220,7 +220,6 @@ class PipeTest(TestCase):
         
         p.removeConnection('bar', proto2)
         self.assertTrue(bar_d.called)
-        
 
 
     def test_ls(self):
@@ -268,5 +267,133 @@ class PipeTest(TestCase):
         ]))
         self.assertEqual(p.alive.keys(), ['foo'], "Only active or"
                          " still working endpoints should be listed")
+
+
+    def test_wait_no_connections(self):
+        """
+        Waiting when there are no connections will succeed immediately.
+        """
+        p = Pipe('foo')
+        return p.wait()
+
+
+    def test_wait_conns(self):
+        """
+        If there are pending connections, wait is only called once they have
+        finished.
+        """
+        p = Pipe('foo')
+        
+        proto1 = object()
+        p.addConnection('foo', proto1)
+        proto2 = object()
+        p.addConnection('foo', proto2)
+        
+        p.switch('bar')
+        
+        w = p.wait()
+        self.assertFalse(w.called, "Should not have called yet, because there "
+                         "is an active connection to an old destination")
+        
+        p.removeConnection('foo', proto1)
+        self.assertFalse(w.called)
+        
+        p.removeConnection('foo', proto2)
+        self.assertTrue(w.called, "Should have called; the last connection "
+                        "finished")
+
+
+    def test_wait_multi_switch(self):
+        """
+        If you switch between lots of things, wait should wait for all previous
+        connections -- not just the most recent.
+        """
+        p = Pipe('foo')
+        
+        proto1 = object()
+        p.addConnection('foo', proto1)
+        
+        p.switch('bar')
+        proto2 = object()
+        p.addConnection('bar', proto2)
+        
+        p.switch('coo')
+        proto3 = object()
+        p.addConnection('coo', proto3)
+        
+        w = p.wait()
+        self.assertFalse(w.called)
+        
+        p.removeConnection('bar', proto2)
+        self.assertFalse(w.called)
+        
+        p.removeConnection('foo', proto1)
+        self.assertTrue(w.called)
+
+
+    def test_wait_switch_back_and_forth(self):
+        """
+        Switching back and forth should work
+        """
+        pipe = Pipe('foo')
+        
+        p1 = object()
+        pipe.addConnection('foo', p1)
+        
+        foo_d = pipe.alive['foo']
+        pipe.switch('bar')
+        wait = pipe.wait()
+        
+        p2 = object()
+        pipe.addConnection('bar', p2)
+        
+        pipe.switch('foo')
+        p3 = object()
+        pipe.addConnection('foo', p3)
+        
+        pipe.switch('bar')
+        p4 = object()
+        pipe.addConnection('bar', p4)
+        
+        pipe.switch('foo')
+        p5 = object()
+        pipe.addConnection('foo', p5)
+        
+        pipe.switch('bar')
+        p6 = object()
+        pipe.addConnection('bar', p6)
+        
+        self.assertFalse(wait.called, "Should not have called wait yet")
+        self.assertFalse(foo_d.called)
+        
+        pipe.removeConnection('bar', p6)
+        
+        self.assertFalse(wait.called)
+        self.assertFalse(foo_d.called)
+        
+        pipe.removeConnection('foo', p5)
+        
+        self.assertFalse(wait.called)
+        self.assertFalse(foo_d.called)
+        
+        pipe.removeConnection('bar', p4)
+        
+        self.assertFalse(wait.called)
+        self.assertFalse(foo_d.called)
+        
+        pipe.removeConnection('foo', p3)
+        
+        self.assertFalse(wait.called)
+        self.assertFalse(foo_d.called)
+        
+        pipe.removeConnection('bar', p2)
+        
+        self.assertFalse(wait.called)
+        self.assertFalse(foo_d.called)
+        
+        pipe.removeConnection('foo', p1)
+        
+        self.assertTrue(wait.called)
+        self.assertTrue(foo_d.called)
 
 

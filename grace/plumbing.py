@@ -9,7 +9,7 @@ from grace.pipe import Pipe
 
 class Plumber:
     """
-    XXX
+    I add, remove and fiddle with L{Pipe}s.
     """
     
     pipeFactory = Pipe

@@ -51,6 +51,7 @@ class Pipe(protocol.Factory):
         self.alive = {}
         self._connections = {}
         self._setDst(dst)
+        self._waiters = []
 
 
     def addConnection(self, dst, conn):
@@ -67,13 +68,17 @@ class Pipe(protocol.Factory):
             self.alive[dst].callback(dst)
             del self._connections[dst]
             del self.alive[dst]
+            if len(self.alive) == 1:
+                for w in self._waiters:
+                    w.callback(self)
 
 
     def _setDst(self, dst):
         self.dst = dst
         if dst not in self._connections:
             self._connections[dst] = 0
-        self.alive[dst] = defer.Deferred()
+        if dst not in self.alive:
+            self.alive[dst] = defer.Deferred()
         
 
     def switch(self, dst):
@@ -106,5 +111,19 @@ class Pipe(protocol.Factory):
         """
         for endpoint, conns in self._connections.items():
             yield (endpoint, conns, endpoint == self.dst)
+
+
+    def wait(self):
+        """
+        Wait for connections to all previously active forwardings finish.
+        
+        @return: A Deferred which fires when all connections are going to the
+            current forwarding rule.
+        """
+        if len(self.alive) == 1:
+            return defer.succeed(self)
+        d = defer.Deferred()
+        self._waiters.append(d)
+        return d
 
 
