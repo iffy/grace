@@ -148,6 +148,32 @@ class Runner:
         return r
 
 
+    def wait(self, basedir, src):
+        """
+        XXX
+        """
+        # XXX holy duplicate code, batman
+        from grace.control import Wait
+        from twisted.protocols import amp
+        
+        fp = FilePath(basedir)
+        client = protocol.ClientCreator(reactor, amp.AMP)
+        socket = fp.child('grace.socket').path
+        r = client.connectUNIX(socket)
+        self.proto = None
+        def gotProto(proto):
+            self.proto = proto
+            return proto.callRemote(Wait, src=src)
+        
+        def doneWaiting(result):
+            self.proto.transport.loseConnection()
+            return result
+        
+        r.addCallback(gotProto)
+        r.addCallback(doneWaiting)
+        return r
+
+
     def run(self):
         """
         Run a command from the command line.
@@ -182,7 +208,8 @@ class Runner:
             def eb(result):
                 print 'Error: %s' % result
                 reactor.stop()
-            r.addCallbacks(cb, eb)
+            r.addCallback(cb)
+            r.addErrback(eb)
             reactor.run()
             sys.exit(self.code)
         elif options.subCommand == 'ls':
@@ -199,8 +226,10 @@ class Runner:
                 reactor.stop()
             def eb(result):
                 print 'Error: %s' % result
+                self.code = 1
                 reactor.stop()
-            r.addCallbacks(cb, eb)
+            r.addCallback(cb)
+            r.addErrback(eb)
             reactor.run()
             sys.exit(self.code)
         elif options.subCommand == 'switch':
@@ -210,8 +239,23 @@ class Runner:
                 reactor.stop()
             def eb(result):
                 print 'Error: %s' % result
+                self.code = 1
                 reactor.stop()
-            r.addCallbacks(cb, eb)
+            r.addCallback(cb)
+            r.addErrback(eb)
+            reactor.run()
+            sys.exit(self.code)
+        elif options.subCommand == 'wait':
+            self.code = 0
+            r = self.wait(options['basedir'], so['src'])
+            def cb(result):
+                reactor.stop()
+            def eb(result):
+                print 'Error: %s' % result
+                self.code = 1
+                reactor.stop()
+            r.addCallback(cb)
+            r.addErrback(eb)
             reactor.run()
             sys.exit(self.code)
 
@@ -228,7 +272,6 @@ class StartOptions(usage.Options):
     def parseArgs(self, src, dst):
         self['src'] = src
         self['dst'] = dst
-
 
 
 class StopOptions(usage.Options):
@@ -262,6 +305,16 @@ class SwitchOptions(usage.Options):
         self['dst'] = dst
 
 
+class WaitOptions(usage.Options):
+
+    synopsis = 'src'
+    longdesc = ('`src` is the listening endpoint')
+
+
+    def parseArgs(self, src):
+        self['src'] = src
+
+
 
 class Options(usage.Options):
 
@@ -276,6 +329,8 @@ class Options(usage.Options):
         ['stop', None, StopOptions, "Stop forwarding"],
         ['ls', None, ListOptions, "List forwards"],
         ['switch', 'x', SwitchOptions, "Switch forwarding"],
+        ['wait', 'w', WaitOptions, "Wait for all traffic to forward to new "
+            "destination"],
     ]
     
     

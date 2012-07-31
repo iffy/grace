@@ -42,6 +42,9 @@ List forwarding rules:
 
     grace ls
 
+Wait for previous forwards to finish:
+
+    grace wait
 
 Stop forwarding:
 
@@ -49,15 +52,6 @@ Stop forwarding:
 
 
 ## Planned usage not yet supported ##
-
-
-Wait for previous forwards to finish:
-
-    grace wait
-
-Switch traffic from port 7600 to port 7700 and wait for all connections to previous ports (7500 and 7600) to finish:
-
-    grace switch --wait tcp:9000 tcp:host=127.0.0.1:port=7700
 
 Upgrade ``grace`` to a new version and swap out the current ``grace`` process with a new one:
 

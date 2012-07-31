@@ -250,3 +250,25 @@ class RunnerTest(TestCase):
         ], "Should have switched")
 
 
+    @defer.inlineCallbacks
+    def test_wait(self):
+        """
+        Wait should work
+        """
+        runner = Runner()
+        
+        # I'm getting AF_UNIX path too long errors using self.mktemp()
+        base = FilePath(tempfile.mkdtemp())
+        log.msg('tmpdir: %r' % base.path)
+        root = base.child('root')
+        src = base.child('src')
+        dst = base.child('dst')
+        
+        _ = yield runner.start(root.path, 'unix:'+src.path, 'unix:'+dst.path)
+        
+        pidfile = root.child('grace.pid')
+        pid = pidfile.getContent()
+        self.addCleanup(self.kill, pid)
+        
+        r = yield runner.wait(root.path, 'unix:'+src.path)
+
