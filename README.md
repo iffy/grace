@@ -9,6 +9,7 @@ Graceful swan takes flight.  Hunter eyes his prey.  KABLAM!  Hunter falls.  Swan
 Install the dependencies:
 
     pip install Twisted
+    pip install PyOpenSSL # if you want SSL support
 
 Either clone repo:
 
@@ -49,6 +50,25 @@ Wait for previous forwards to finish:
 Stop forwarding:
 
     grace stop
+
+
+## It's not just for HTTP ##
+
+Because ``grace`` uses [Twisted's excellent endpoints](http://twistedmatrix.com/documents/current/api/twisted.internet.endpoints.serverFromString.html), you can forward just about any traffic to just about anywhere.  Here's SSL to TCP:
+
+    grace start ssl:443:privateKey=key.pem:certKey=crt.pem tcp:host=127.0.0.1:port=7500
+
+TCP to SSL:
+
+    grace start tcp:9000 ssl:host=www.google.com:port=443:caCertsDir=/etc/ssl/certs
+
+TCP to domain socket:
+
+    grace start tcp:9000 unix:/var/foo/bar
+
+Domain socket to TCP:
+
+    grace start unix:/var/foo/bar tcp:host=127.0.0.1:port=7500
 
 
 ## Planned usage not yet supported ##
